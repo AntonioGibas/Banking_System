@@ -1,0 +1,110 @@
+-- ==================================================================================
+-- BANKING SYSTEM - VALIDACIJA DEPLOYMENT-A
+-- Environment: TEST
+-- ==================================================================================
+
+SET CURRENT SCHEMA = 'BANKING_TEST';
+
+-- ==================================================================================
+-- PROVJERA 1: POSTOJANJE TABLICA
+-- ==================================================================================
+
+SELECT 'REFERENCE TABLICE:' AS KATEGORIJA, COUNT(*) AS BROJ_TABLICA
+FROM SYSIBM.SYSTABLES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND NAME IN ('POSLOVNICE', 'RIZIK_OCJENA_REF', 'STATUS_REF', 
+             'TIP_RACUNA_REF', 'TRANSAKCIJA_TIP_REF', 'IZVORNI_SUSTAV_REF')
+
+UNION ALL
+
+SELECT 'MASTER ENTITETI:', COUNT(*)
+FROM SYSIBM.SYSTABLES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND NAME IN ('KLIJENTI', 'PROIZVOD_MASTER', 'RACUNI')
+
+UNION ALL
+
+SELECT 'NORMALIZIRANE TABLICE:', COUNT(*)
+FROM SYSIBM.SYSTABLES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND NAME IN ('KLIJENT_ADRESE', 'KLIJENT_KONTAKTI', 'KLIJENT_DOKUMENTI', 
+             'KAMATNE_STOPE', 'RACUN_PROIZVODI')
+
+UNION ALL
+
+SELECT 'TRANSAKCIJSKE TABLICE:', COUNT(*)
+FROM SYSIBM.SYSTABLES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND NAME IN ('TRANSAKCIJE', 'BLOKADE', 'RED_TRANSAKCIJA', 'GLAVNA_KNJIGA')
+
+UNION ALL
+
+SELECT 'UKUPNO TABLICA:', COUNT(*)
+FROM SYSIBM.SYSTABLES 
+WHERE CREATOR = 'BANKING_TEST';
+
+-- ==================================================================================
+-- PROVJERA 2: BROJ ZAPISA U REFERENCE TABLICAMA
+-- ==================================================================================
+
+SELECT 'POSLOVNICE' AS TABLICA, COUNT(*) AS BROJ_ZAPISA FROM POSLOVNICE
+UNION ALL
+SELECT 'RIZIK_OCJENA_REF', COUNT(*) FROM RIZIK_OCJENA_REF
+UNION ALL
+SELECT 'STATUS_REF', COUNT(*) FROM STATUS_REF
+UNION ALL
+SELECT 'TIP_RACUNA_REF', COUNT(*) FROM TIP_RACUNA_REF
+UNION ALL
+SELECT 'TRANSAKCIJA_TIP_REF', COUNT(*) FROM TRANSAKCIJA_TIP_REF
+UNION ALL
+SELECT 'IZVORNI_SUSTAV_REF', COUNT(*) FROM IZVORNI_SUSTAV_REF
+UNION ALL
+SELECT 'PROIZVOD_MASTER', COUNT(*) FROM PROIZVOD_MASTER
+UNION ALL
+SELECT 'KAMATNE_STOPE', COUNT(*) FROM KAMATNE_STOPE
+ORDER BY TABLICA;
+
+-- ==================================================================================
+-- PROVJERA 3: POSTOJANJE INDEKSA
+-- ==================================================================================
+
+SELECT 'UKUPNO INDEKSA:' AS TIP, COUNT(*) AS BROJ
+FROM SYSIBM.SYSINDEXES 
+WHERE CREATOR = 'BANKING_TEST'
+
+UNION ALL
+
+SELECT 'UNIQUE INDEKSI:', COUNT(*)
+FROM SYSIBM.SYSINDEXES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND UNIQUERULE IN ('U', 'P')
+
+UNION ALL
+
+SELECT 'OBIČNI INDEKSI:', COUNT(*)
+FROM SYSIBM.SYSINDEXES 
+WHERE CREATOR = 'BANKING_TEST' 
+AND UNIQUERULE NOT IN ('U', 'P');
+
+-- ==================================================================================
+-- PROVJERA 4: POSTOJANJE SEKVENCI
+-- ==================================================================================
+
+SELECT 'UKUPNO SEKVENCI:' AS TIP, COUNT(*) AS BROJ
+FROM SYSIBM.SYSSEQUENCES 
+WHERE SCHEMA = 'BANKING_TEST';
+
+-- Prikaz svih sekvenci s trenutnim vrijednostima
+SELECT NAME AS SEKVENCA, 
+       START AS POCETNA_VRIJEDNOST,
+       INCREMENT AS KORAK
+FROM SYSIBM.SYSSEQUENCES 
+WHERE SCHEMA = 'BANKING_TEST'
+ORDER BY NAME;
+
+-- ==================================================================================
+-- PROVJERA 5: FOREIGN KEY CONSTRAINTS
+-- ==================================================================================
+
+SELECT 'UKUPNO FK CONSTRAINTS:' AS TIP, COUNT(*) AS BROJ
+FROM SYSIBM.SYSRELS
