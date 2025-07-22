@@ -1,0 +1,221 @@
+BANKOVNI SUSTAV - DOKUMENTACIJA BAZE PODATAKA
+PREGLED SUSTAVA
+Ova dokumentacija opisuje shemu baze podataka za bankovni sustav koji je dizajniran za DB2 z/OS v13. Sustav pokriva sve ključne bankovne operacije uključujući upravljanje klijentima, računima, proizvodima, transakcijama i računovodstvenim zapisima.
+ARHITEKTURA BAZE PODATAKA
+GLAVNE KARAKTERISTIKE
+
+Platforma: DB2 za z/OS verzija 13
+Standardizirani ključevi: KUPAC_ID (BIGINT 12 znamenaka) i RACUN_BROJ (CHAR 12)
+Broj tablica: 8 glavnih tablica
+Referentni integritet: Potpuno implementiran kroz foreign key veze
+Revizijski trag: Ugrađen kroz timestamp kolone i status praćenje
+
+HIJERARHIJA PODATAKA
+KLIJENTI (Master)
+    └── RACUNI
+        ├── PROIZVODI
+        ├── TRANSAKCIJE
+        ├── BLOKADE
+        ├── KAMATNE_STOPE
+        ├── GLAVNA_KNJIGA
+        └── RED_TRANSAKCIJA
+        
+DETALJNI OPIS TABLICA
+1. KLIJENTI
+Svrha: Glavni podaci o klijentima banke
+Ključne kolone:
+
+KUPAC_ID (BIGINT): Jedinstveni 12-znamenkasti identifikator klijenta
+RACUN_BROJ (CHAR 12): Broj računa klijenta
+OIB (CHAR 11): Osobni identifikacijski broj
+RIZIK_OCJENA (CHAR 2): Kreditna ocjena (N1, N2, S1, S2, V1, V2)
+STATUS (CHAR 1): A=Aktivan, N=Neaktivan, Z=Zatvoren, S=Suspendiran
+
+Poslovne regel:
+
+OIB mora biti točno 11 znamenaka
+KUPAC_ID mora biti između 100,000,000,000 i 999,999,999,999
+Automatsko timestamp praćenje kreiranja i ažuriranja
+
+2. RACUNI
+Svrha: Glavni podaci o bankovnim računima
+Ključne kolone:
+
+TIP_RACUNA (CHAR 3): TEK=Tekući, STD=Štedni, ORO=Oročeni, KRE=Kreditni, KAR=Kartični
+TRENUTNI_SALDO (DECIMAL 15,2): Trenutno stanje računa
+DOSTUPNI_SALDO (DECIMAL 15,2): Dostupna sredstva za korištenje
+MINUS_LIMIT (DECIMAL 10,2): Odobreni minus
+STATUS (CHAR 1): A=Aktivan, Z=Zatvoren, B=Blokiran, M=Održavanje
+
+Poslovne regel:
+
+Dostupni saldo ne može biti veći od zbroja trenutnog salda i minus limita
+Foreign key veza na KLIJENTI tablicu
+
+3. PROIZVODI
+Svrha: Katalog bankovnih proizvoda i njihove konfiguracije
+Ključne kolone:
+
+PROIZVOD_KOD (CHAR 4): Jedinstveni kod proizvoda
+NAZIV_PROIZVODA (VARCHAR 50): Naziv proizvoda
+OSNOVNA_KAMATA (DECIMAL 5,4): Bazna kamata proizvoda
+MJESECNA_NAKNADA (DECIMAL 7,2): Mjesečni troškovi održavanja
+LIMIT_TRANSAKCIJA (INTEGER): Maksimalni broj transakcija mjesečno
+
+Poslovne regel:
+
+Datum isteka mora biti nakon datuma važenja
+Status: A=Aktivan, N=Neaktivan, B=Blokiran
+
+4. TRANSAKCIJE
+Svrha: Potpuna povijest svih bankovnih transakcija
+Ključne kolone:
+
+TRANSAKCIJA_ID (CHAR 20): Jedinstveni identifikator transakcije
+KOD_TRANSAKCIJE (CHAR 4): UPL=Uplata, ISP=Isplata, PRE=Prijenos, NAK=Naknada, itd.
+IZNOS (DECIMAL 15,2): Iznos transakcije
+TEKUCI_SALDO (DECIMAL 15,2): Saldo nakon transakcije
+IZVORNI_SUSTAV (CHAR 6): BAN=Banka, WEB=Web, ATM=Bankomat, itd.
+
+Poslovne regel:
+
+Svaka transakcija mora imati povezani račun
+Status: K=Knjiženo, P=Pending, O=Otkazano, G=Greška
+
+5. BLOKADE
+Svrha: Upravljanje blokadama i ograničenjima na računima
+Ključne kolone:
+
+TIP_BLOKADE (CHAR 3): CEK=Ček, PRA=Pravna, SIG=Sigurnosna, itd.
+IZNOS_BLOKADE (DECIMAL 15,2): Blokirani iznos
+KOD_RAZLOGA (CHAR 4): Razlog blokade
+KREIRAO/OSLOBODIO (VARCHAR 10): Tko je kreirao/oslobodio blokadu
+
+Poslovne regel:
+
+Datum isteka ne može biti prije datuma važenja
+Status: A=Aktivna, O=Oslobođena, I=Istekla
+
+6. KAMATNE_STOPE
+Svrha: Definiranje kamatnih razreda za različite proizvode
+Ključne kolone:
+
+RAZINA_RAZREDA (SMALLINT): Nivo kamatnog razreda
+SALDO_OD/DO (DECIMAL 15,2): Raspon salda za primjenu kamata
+KAMATA_STOPA (DECIMAL 5,4): Kamatna stopa u postocima
+METODA_IZRACUNA (CHAR 3): DAN=Dnevno, MJE=Mjesečno, GOD=Godišnje
+
+7. GLAVNA_KNJIGA
+Svrha: Računovodstveni unosi za glavnu knjigu
+Ključne kolone:
+
+RACUN_GK (CHAR 10): Broj glavno knjižnog računa
+DUGOVNA_STRANA (DECIMAL 18,2): Dugovna strana knjiženja
+POTRAZNA_STRANA (DECIMAL 18,2): Potražna strana knjiženja
+KOD_POSLOVNICE (CHAR 4): Kod poslovnice koja je izvršila knjiženje
+
+Poslovne regel:
+
+Samo jedna strana (dugovna ili potražna) može imati vrijednost > 0
+
+8. RED_TRANSAKCIJA
+Svrha: Queue sustav za obradu transakcija na čekanju
+Ključne kolone:
+
+VRIJEME_ZAPRIMLJENO (TIMESTAMP): Kad je transakcija zaprimljena
+DATUM_OBRADE (DATE): Planirani datum obrade
+BROJ_PONOVNIH (SMALLINT): Broj pokušaja obrade (max 5)
+PORUKA_GRESKE (VARCHAR 200): Opis greške ako je obrada neuspješna
+
+Poslovne regel:
+
+Status: C=Čeka, U=U obradi, N=Neuspješno, P=Procesuirano
+Maksimalno 5 pokušaja ponovne obrade
+
+SEKVENCE
+Sustav koristi 5 sekvenci za automatsko generiranje ID brojeva:
+SEQ_KUPAC_ID
+
+Tip: BIGINT
+Raspon: 100,000,000,000 - 999,999,999,999
+Cache: 1000 (visoka frekvencija novih kupaca)
+
+SEQ_TRANSAKCIJA_ID
+
+Tip: BIGINT
+Početak: 1,000,000,000
+Cache: 500 (vrlo visoka frekvencija transakcija)
+
+SEQ_BLOKADA_ID
+
+Tip: BIGINT
+Početak: 1,000,000
+Cache: 50 (niska frekvencija blokada)
+
+SEQ_UNOS_GK_ID
+
+Tip: BIGINT
+Početak: 1
+Cache: 1000 (visoka frekvencija knjiženja)
+
+SEQ_RED_ID
+
+Tip: BIGINT
+Početak: 1
+Cache: 200 (umjerena frekvencija queue obrade)
+
+INDEKSI
+PERFORMANSNI INDEKSI
+
+Indeksi na status kolonama za brže filtriranje
+Indeksi na datum kolonama za temporalne upite
+Indeksi na kod/tip kolone za kategorizaciju
+Indeksi na saldo kolone za financijske kalkulacije
+
+SIGURNOSNI INDEKSI
+
+Indeks na OIB za brže pretraživanje klijenata
+Indeks na RIZIK_OCJENA za analize rizika
+
+SIGURNOSNE ZNAČAJKE
+PROVJERE INTEGRITETA
+
+CHECK constrainti za validaciju statusa i kodova
+FOREIGN KEY constrainti za referentni integritet
+NOT NULL constrainti za obavezne podatke
+Provjera raspona za numeričke vrijednosti
+
+REVIZIJSKI TRAG
+
+Automatski timestamp za sve kritične operacije
+Praćenje tko je kreirao/modificirao zapise
+Status praćenje kroz životni ciklus zapisa
+
+INSTALACIJA I ODRŽAVANJE
+PREDUVJETI
+
+DB2 za z/OS verzija 13 ili novija
+Dovoljan prostor za tablespace (minimalno 10GB)
+Privilegije za kreiranje tablica i sekvenci
+
+REDOSLIJED IZVRŠAVANJA
+
+Kreiranje tablica (redoslijed iz skripte zbog foreign key ovisnosti)
+Kreiranje indeksa
+Kreiranje sekvenci
+Dodjeljivanje privilegija
+
+PREPORUČENO ODRŽAVANJE
+
+Redovito ažuriranje statistika (RUNSTATS)
+Praćenje performance indeksa
+Archiviranje starih transakcija (starije od 7 godina)
+Redovito backup glavnih tablica
+
+VERZIONIRANJE
+Trenutna verzija: 1.0
+Kompatibilnost: DB2 z/OS v13+
+Zadnje ažuriranje: Tijekom implementacije
+Autor: Bankovni tim za baze podataka
+
+Ova dokumentacija se redovito ažurira u skladu s promjenama u sustavu.
