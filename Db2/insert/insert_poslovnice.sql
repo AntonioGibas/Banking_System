@@ -1,4 +1,5 @@
 -- POSLOVNICE
+
 INSERT INTO POSLOVNICE VALUES 
     ('0001', 'Glavna poslovnica Zagreb', 'Ilica 1', 'Zagreb', '10000', '01-1234567', 'A', '2020-01-01');
 
