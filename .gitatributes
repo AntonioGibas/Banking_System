@@ -1,0 +1,16 @@
+# SQL files
+*.sql linguist-language=SQL
+
+# COBOL files
+*.cbl linguist-language=COBOL
+*.cpy linguist-language=COBOL
+*.copybook linguist-language=COBOL
+
+# Documentation
+*.md linguist-documentation=true
+*.txt linguist-documentation=true
+docs/* linguist-documentation=true
+
+# Exclude from language stats
+rollback.sql linguist-generated=true
+test_*.sql linguist-generated=true
