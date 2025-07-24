@@ -1,7 +1,7 @@
 -- =====================================================
 -- TRANSAKCIJE - POJEDNOSTAVLJENO
 -- =====================================================
-
+SET CURRENT SCHEMA = 'BANKING_TEST';
 -- TRANSAKCIJE
 CREATE TABLE TRANSAKCIJE (
     TRANSAKCIJA_ID      CHAR(20)        NOT NULL,

@@ -1,6 +1,7 @@
 -- =====================================================
 -- KREIRANJE SEKVENCI
 -- =====================================================
+SET CURRENT SCHEMA = 'BANKING_TEST';
 
 CREATE SEQUENCE SEQ_KUPAC_ID
     AS BIGINT
