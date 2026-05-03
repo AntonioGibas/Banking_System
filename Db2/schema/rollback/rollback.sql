@@ -1,50 +1,33 @@
 -- ==================================================================================
 -- BANKING SYSTEM - ROLLBACK SCRIPT
 -- Environment: TEST
--- PAŽNJA: OVAJ SCRIPT BRIŠE SVE PODATKE I STRUKTURU!
+-- Platform: IBM DB2 z/OS v13
+--
+-- WARNING: THIS SCRIPT WILL DELETE ALL DATA AND STRUCTURE!
+-- The destructive section is wrapped in a comment block for safety.
+-- Uncomment the block below ONLY when you intentionally want to wipe everything.
 -- ==================================================================================
-
-\echo ''
-\echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-\echo '!! PAŽNJA: ROLLBACK BANKING_TEST SUSTAVA !!'
-\echo '!! OVAJ SCRIPT ĆE OBRISATI SVE PODATKE !!'
-\echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-\echo ''
-
--- Samo kao sigurnosna provjera
--- UKLONITE KOMENTAR ISPOD SAMO AKO STVARNO ŽELITE OBRISATI SVE!
 
 /*
 
 SET CURRENT SCHEMA = 'BANKING_TEST';
 
 -- ==================================================================================
--- KORAK 1: BRISANJE PODATAKA IZ TABLICA (OBRNUT REDOSLIJED DEPENDENCIES)
+-- STEP 1: DELETE DATA (REVERSE FK DEPENDENCY ORDER)
 -- ==================================================================================
 
-\echo 'Brišem podatke iz tablica...'
-
--- Transakcijske tablice (nema child dependencija)
 DELETE FROM GLAVNA_KNJIGA;
 DELETE FROM RED_TRANSAKCIJA;
 DELETE FROM TRANSAKCIJE;
 DELETE FROM BLOKADE;
-
--- Many-to-many veze
 DELETE FROM RACUN_PROIZVODI;
-
--- Normalizirane tablice (ovisne o master tablicama)
 DELETE FROM KLIJENT_DOKUMENTI;
 DELETE FROM KLIJENT_KONTAKTI;
 DELETE FROM KLIJENT_ADRESE;
 DELETE FROM KAMATNE_STOPE;
-
--- Master entiteti
 DELETE FROM RACUNI;
 DELETE FROM KLIJENTI;
 DELETE FROM PROIZVOD_MASTER;
-
--- Reference tablice (zadnje jer su parent)
 DELETE FROM IZVORNI_SUSTAV_REF;
 DELETE FROM TRANSAKCIJA_TIP_REF;
 DELETE FROM TIP_RACUNA_REF;
@@ -52,113 +35,83 @@ DELETE FROM STATUS_REF;
 DELETE FROM RIZIK_OCJENA_REF;
 DELETE FROM POSLOVNICE;
 
-\echo 'Svi podaci obrisani.'
-
 -- ==================================================================================
--- KORAK 2: BRISANJE TABLICA (OBRNUT REDOSLIJED FOREIGN KEY DEPENDENCIES)
+-- STEP 2: DROP TABLES (REVERSE FK DEPENDENCY ORDER)
 -- ==================================================================================
 
-\echo 'Brišem tablice...'
-
--- Transakcijske tablice
-DROP TABLE IF EXISTS GLAVNA_KNJIGA;
-DROP TABLE IF EXISTS RED_TRANSAKCIJA;
-DROP TABLE IF EXISTS TRANSAKCIJE;
-DROP TABLE IF EXISTS BLOKADE;
-
--- Many-to-many i normalizirane tablice
-DROP TABLE IF EXISTS RACUN_PROIZVODI;
-DROP TABLE IF EXISTS KLIJENT_DOKUMENTI;
-DROP TABLE IF EXISTS KLIJENT_KONTAKTI;
-DROP TABLE IF EXISTS KLIJENT_ADRESE;
-DROP TABLE IF EXISTS KAMATNE_STOPE;
-
--- Master entiteti
-DROP TABLE IF EXISTS RACUNI;
-DROP TABLE IF EXISTS KLIJENTI;
-DROP TABLE IF EXISTS PROIZVOD_MASTER;
-
--- Reference tablice
-DROP TABLE IF EXISTS IZVORNI_SUSTAV_REF;
-DROP TABLE IF EXISTS TRANSAKCIJA_TIP_REF;
-DROP TABLE IF EXISTS TIP_RACUNA_REF;
-DROP TABLE IF EXISTS STATUS_REF;
-DROP TABLE IF EXISTS RIZIK_OCJENA_REF;
-DROP TABLE IF EXISTS POSLOVNICE;
-
-\echo 'Sve tablice obrisane.'
+DROP TABLE GLAVNA_KNJIGA;
+DROP TABLE RED_TRANSAKCIJA;
+DROP TABLE TRANSAKCIJE;
+DROP TABLE BLOKADE;
+DROP TABLE RACUN_PROIZVODI;
+DROP TABLE KLIJENT_DOKUMENTI;
+DROP TABLE KLIJENT_KONTAKTI;
+DROP TABLE KLIJENT_ADRESE;
+DROP TABLE KAMATNE_STOPE;
+DROP TABLE RACUNI;
+DROP TABLE KLIJENTI;
+DROP TABLE PROIZVOD_MASTER;
+DROP TABLE IZVORNI_SUSTAV_REF;
+DROP TABLE TRANSAKCIJA_TIP_REF;
+DROP TABLE TIP_RACUNA_REF;
+DROP TABLE STATUS_REF;
+DROP TABLE RIZIK_OCJENA_REF;
+DROP TABLE POSLOVNICE;
 
 -- ==================================================================================
--- KORAK 3: BRISANJE SEKVENCI
+-- STEP 3: DROP SEQUENCES
 -- ==================================================================================
 
-\echo 'Brišem sekvence...'
-
-DROP SEQUENCE IF EXISTS SEQ_STOPA_ID;
-DROP SEQUENCE IF EXISTS SEQ_DOKUMENT_ID;
-DROP SEQUENCE IF EXISTS SEQ_KONTAKT_ID;
-DROP SEQUENCE IF EXISTS SEQ_ADRESA_ID;
-DROP SEQUENCE IF EXISTS SEQ_RED_ID;
-DROP SEQUENCE IF EXISTS SEQ_UNOS_GK_ID;
-DROP SEQUENCE IF EXISTS SEQ_BLOKADA_ID;
-DROP SEQUENCE IF EXISTS SEQ_TRANSAKCIJA_ID;
-DROP SEQUENCE IF EXISTS SEQ_KUPAC_ID;
-
-\echo 'Sve sekvence obrisane.'
+DROP SEQUENCE SEQ_STOPA_ID;
+DROP SEQUENCE SEQ_DOKUMENT_ID;
+DROP SEQUENCE SEQ_KONTAKT_ID;
+DROP SEQUENCE SEQ_ADRESA_ID;
+DROP SEQUENCE SEQ_RED_ID;
+DROP SEQUENCE SEQ_UNOS_GK_ID;
+DROP SEQUENCE SEQ_BLOKADA_ID;
+DROP SEQUENCE SEQ_TRANSAKCIJA_ID;
+DROP SEQUENCE SEQ_KUPAC_ID;
 
 -- ==================================================================================
--- KORAK 4: BRISANJE TABLESPACE-OVA (OPCIONALNO)
+-- STEP 4: DROP TABLESPACES
 -- ==================================================================================
 
-\echo 'Brišem custom tablespace-ove...'
-
--- PAŽNJA: Ovo može utjecati na druge sustave ako se koriste!
--- Uklonite komentar samo ako ste sigurni da su ovi tablespace-ovi 
--- ekskluzivno za BANKING_TEST
-
--- DROP TABLESPACE TS_BANK_IX_TEST;
--- DROP TABLESPACE TS_BANK_TRANS_TEST;
--- DROP TABLESPACE TS_BANK_MASTER_TEST;
--- DROP TABLESPACE TS_BANK_REF_TEST;
-
-\echo 'Tablespace-ovi zadržani (sigurnost).'
+DROP TABLESPACE BANKTEST.TSGLAVNA;
+DROP TABLESPACE BANKTEST.TSRED;
+DROP TABLESPACE BANKTEST.TSTRANS;
+DROP TABLESPACE BANKTEST.TSBLOK;
+DROP TABLESPACE BANKTEST.TSRACPRO;
+DROP TABLESPACE BANKTEST.TSDOKUM;
+DROP TABLESPACE BANKTEST.TSKONTKT;
+DROP TABLESPACE BANKTEST.TSADRESE;
+DROP TABLESPACE BANKTEST.TSKAMATA;
+DROP TABLESPACE BANKTEST.TSRACUNI;
+DROP TABLESPACE BANKTEST.TSKLIENT;
+DROP TABLESPACE BANKTEST.TSPROIZV;
+DROP TABLESPACE BANKTEST.TSIZVOR;
+DROP TABLESPACE BANKTEST.TSTIPTRN;
+DROP TABLESPACE BANKTEST.TSTIPRAC;
+DROP TABLESPACE BANKTEST.TSSTATUS;
+DROP TABLESPACE BANKTEST.TSRIZIK;
+DROP TABLESPACE BANKTEST.TSPOSLOV;
 
 -- ==================================================================================
--- KORAK 5: BRISANJE SCHEMA (OPCIONALNO)
+-- STEP 5: DROP DATABASE (OPTIONAL - removes everything else inside)
 -- ==================================================================================
 
-\echo 'Schema BANKING_TEST zadržana za ponovnu upotrebu.'
-
--- Ako želite kompletno obrisati schema:
--- DROP SCHEMA BANKING_TEST RESTRICT;
+DROP DATABASE BANKTEST;
 
 COMMIT;
 
-\echo ''
-\echo '==============================================='
-\echo 'BANKING_TEST SUSTAV USPJEŠNO UKLONJEN!'
-\echo '==============================================='
-\echo 'Obrisano:'
-\echo '- Svi podaci'
-\echo '- Sve tablice'  
-\echo '- Sve sekvence'
-\echo '- Svi indeksi (automatski s tablicama)'
-\echo ''
-\echo 'Zadržano:'
-\echo '- Schema BANKING_TEST'
-\echo '- Tablespace-ovi'
-\echo ''
-\echo 'Možete ponovno pokrenuti deployment skripte.'
-\echo '==============================================='
-
 */
 
-\echo ''
-\echo 'ROLLBACK SCRIPT JE SPREMAN ALI KOMENTIRAN.'
-\echo ''
-\echo 'Za izvršavanje:'
-\echo '1. Uklonite /* i */ komentare'
-\echo '2. Provjerite da stvarno želite obrisati sve'
-\echo '3. Pokrenite script'
-\echo ''
-\echo 'PAŽNJA: NEMA POVRATKA NAKON BRISANJA!'
+-- ==================================================================================
+-- END OF ROLLBACK SCRIPT
+--
+-- To execute:
+--   1. Remove the surrounding comment block.
+--   2. Verify you are connected to the correct DB2 subsystem.
+--   3. Run the script.
+--
+-- WARNING: NO RECOVERY AFTER DELETION!
+-- ==================================================================================
